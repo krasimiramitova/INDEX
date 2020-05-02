@@ -8,7 +8,7 @@ session_start();
 echo '<div class="container">';
 	echo '<div class="col-md-7 col-md-offset-1">'; 
 
-	if ((isset($_POST['play']))||(isset($_SESSION['category'])))
+	if (((isset($_POST['play']))||(isset($_SESSION['category'])))&&(!isset($_POST['save_game'])))
 		{if (isset($_POST['play'])){$_GET['letter']=NULL;}
 		if (isset($_POST['username']))
 	 		{$_SESSION['username']=$_POST['username'];}
@@ -91,7 +91,8 @@ echo '<div class="container">';
 		//		if (isset($_SESSION['username']))
 		//			{echo "You almost guess, ".$_SESSION['username']."!";}
 		//		else {echo "You almost guess! Try again!";}
-				$mistake=$result_guess;	}
+				$mistake=$result_guess;	
+				}
 			else {$_SESSION['guess_array']=$result_guess;}								
 		//new value for $guess_array if the guess is right
 			}
@@ -108,9 +109,6 @@ echo '<div class="container">';
 //			{
 				$_SESSION['fails']=$_SESSION['fails']-$mistake;
 //			}	
-		if (isset($_POST['save_game']))
-			{$play_status='saved';}
-
 		//count empty letters to check the need for repeat	
 		$count_empty=0;													
 		for ($h=0; $h<count($_SESSION['arr']); $h++)
@@ -169,6 +167,7 @@ echo '<div class="container">';
 					break;
 					case 'lost':
 						$play_status=1;
+						echo "You didn't guess ".$_SESSION['word'].", but you can try again!	 ";
 						echo '<img src="img/hangman_family.jpg" alt="won the game" height="100%" width="100%">';
 						if (isset($_SESSION['username']))
 							{echo "<p>A hangman's familly lost their father</p><p>Would you try to save another one,".$_SESSION['username']."?</p>";
@@ -176,13 +175,6 @@ echo '<div class="container">';
 						else 
 							{echo "<p>A hangman's familly lost their father</p><p>Would you try to save another one?</p>";}
 					break;
-					case 'saved':
-						$play_status=5;	
-						if (isset($_SESSION['username']))
-							{echo "<p>You saved that game for later, ".$_SESSION['username'].".</p>";}
-						else 
-							{echo '<p>You can <a class="btn btn-default" href="sign_up.php">sign up</a> or 
-					<a class="btn btn-default" href="login.php">login</a> if you want to be able to continue that game later.</p>';}	
 				}
 
 //			include 'includes/session_transmitt.php';
@@ -200,7 +192,7 @@ echo '<div class="container">';
 			session_destroy();
 			}
 		}	
-	else 
+	elseif  (!isset($_POST['save_game']))
 		{echo "<h1>Welcome to hangman!</h1>
 		<img src='img/words_hurt.jpg' alt='Words hurt!' height='100%' width='100%'>
 			<p>This is version of the classic letter guessing game called Hangman. You are shown a set of blank letters that match a word or phrase and you have to guess what these letters are to reveal the hidden word. You guess by picking letters from a table. If you pick a letter that is in the word, it is revealed from the blank letters; however, if you pick a letter that is not in the word, then a stickman is slowly drawn. With each wrong letter guess, the man is drawn more and more. When the man is finished, he is hung and the game is lost. This is why the game is called 'Hangman'. If you can reveal all the letters in the word before the man is hung then you are successful and the full word is revealed. You can make a fast guess by using the field called fast guess.</p>
@@ -208,11 +200,23 @@ echo '<div class="container">';
 			<p>You can choose another language as well, if you don't want to play in English.</p>
 			<p>Use the buttons and forms at your right to navigate the app!</p>
 			<h2>Enjoy the game!</h2>";
+		}
+	else 
+		{$play_status=5;
+		if (isset($_SESSION['username']))
+			{echo "You saved that game for later. You can find it in your <a href='pages/en/home.php'>HOME</a> section";
+				include 'includes/save_a_game.php';}
+		else 
+			{echo '<p>You can <a class="btn btn-default" href="sign_up.php">sign up</a> or 
+			<a class="btn btn-default" href="login.php">login</a> if you want to be able to continue that game later.</p>';}
 		}	
 	echo '</div>';
+
+// side bar
+
 	echo '<div class="col-md-3">';
 		//link to the bulgarian version
-		echo '<p><a class="btn btn-default" href="index.php"> English </a></p>';
+		echo '<p><a class="btn btn-default" href="index_bg.php"> Български </a></p>';
 		//choose a level and a category
 		if (!isset($_POST['play']))
 			{echo '<form action="" method="post">';
@@ -230,35 +234,52 @@ echo '<div class="container">';
 		else
 			{	
 		//check for spelling of the word before category
-		if (substr($_SESSION['category'],0,1)=='a')
-			{echo '<p class="menu">You play to guess an '.$_SESSION['category'].'. <p>';}
-			else
-			{echo '<p class="menu">You play to guess a '.$_SESSION['category'].'. <p>';}
-		//echo '<p class="menu">level: '.$_SESSION['level'].'<p>';
-		//echo 'login, register, choose: category&level,fast guess';
-			echo '<form autocomplete="off" method="post" action="">
-			<p>Fast guess</p>
-			<input type="text" name="fast_guess">
-			<p><input class="btn btn-default" type="submit" name="submit" id="btn" value="guess"></p>
-			</form>';
+			if (substr($_SESSION['category'],0,1)=='a')
+				{echo '<p class="menu">You play to guess an '.$_SESSION['category'].'. <p>';}
+				else
+				{echo '<p class="menu">You play to guess a '.$_SESSION['category'].'. <p>';}
+			//echo '<p class="menu">level: '.$_SESSION['level'].'<p>';
+			//echo 'login, register, choose: category&level,fast guess';
+				echo '<form autocomplete="off" method="post" action="">
+				<p>Fast guess</p>
+				<input type="text" name="fast_guess">
+				<p><input class="btn btn-default" type="submit" name="submit" id="btn" value="guess"></p>
+				</form>';
+				
+			
+			if (isset($_SESSION['word']))	
+				{echo '<form action="" method="post">';
+					if (isset($_SESSION['username']))
+					{echo '
+					   	<input type="hidden" name="username" value="'. $_SESSION['username'].'">
+						<input type="hidden" name="player_id" value="'. $_SESSION['player_id'].'">';
+					}
+				$guess_array=implode(',',$_SESSION['guess_array']);
+				$guess_letters=implode(',',$_SESSION['guess_letters']);
+				echo '<input type="hidden" name="level" value="'. $_SESSION['level'].'">
+					<input type="hidden" name="category" value="'. $_SESSION['category'].'">
+					<input type="hidden" name="fails" value="'. $_SESSION['fails'].'">
+					<input type="hidden" name="guess_letters" value="'. $guess_letters.'">
+					<input type="hidden" name="guess_array" value="'. $guess_array.'">
+					<input type="hidden" name="word" value="'. $_SESSION['word'].'">
+					<input type="hidden" name="play_id" value="'. $_SESSION['play_id'].'">
+					<input class="btn btn-default" type="submit" name="save_game" value="SAVE">';
+				echo '</form></p>';
+				}
+
+				include 'includes/function_update_status.php';
+				session_destroy();
 			}
-		if (!isset($_SESSION['player_id']))
-			{echo '<p><a class="btn btn-default" href="pages/en/login.php">Login</a></p>';
-			echo '<p><a class="btn btn-default" href="sign_up.php">Sign up</a></p>';
-			}
-		else 
-			{echo '<p><a class="btn btn-default" href="logout.php">Logout</a></p>';
-			echo '<p><a class="btn btn-default" href="challenge.php">Challenge</a></p>';
-			}
-		if (isset($_POST['play']))	
-			{echo '<p><form method="post" action="">
-			<input class="btn btn-default" type="submit" name="save_game" value="SAVE">
-			</form></p>';
-			}
-		if (isset($_SESSION['player_id']))
-			{echo '<p><a class="btn btn-default" href="pages/en/home.php">HOME</a></p>';
-			}
-	echo '</div>';
+			if (!isset($_SESSION['player_id']))
+				{echo '<p><a class="btn btn-default" href="pages/en/login.php">Login</a></p>';
+				echo '<p><a class="btn btn-default" href="sign_up.php">Sign up</a></p>';
+				}			
+			else 
+				{echo '<p><a class="btn btn-default" href="logout.php">Logout</a></p>';
+				echo '<p><a class="btn btn-default" href="challenge.php">Challenge</a></p>';
+				echo '<p><a class="btn btn-default" href="pages/en/home.php">HOME</a></p>';
+				}
+			echo '</div>';
 
 echo '</div>';
 	
